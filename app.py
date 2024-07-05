@@ -23,15 +23,15 @@ class Movie(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
-    poster_url = Column(String)
+    poster_url = Column(String, default="없음")
     age_limit = Column(String, default="없음")
-    running_time = Column(String)
-    release_date = Column(String)
-    synopsis = Column(String)
+    running_time = Column(String, default="없음")
+    release_date = Column(String, default="없음")
+    synopsis = Column(String, default="없음")
     recommended_movies = Column(String, default="없음")
-    genre = Column(String)
-    rating = Column(String)
-    audience = Column(Integer)
+    genre = Column(String, default="없음")
+    rating = Column(String, default="없음")
+    audience = Column(Integer, default=0)
 
     reviews = relationship("Review", back_populates="movie")
 
@@ -55,12 +55,9 @@ def create_tables():
         print("Tables already exist. Skipping creation.")
 
 def preprocess_text(text):
-    # 불필요한 문자 제거
     text = re.sub(r'[^\w\s]', '', text)
-    # 형태소 분석
     okt = Okt()
     tokens = okt.pos(text, stem=True)
-    # 명사, 형용사, 동사만 선택
     tokens = [word for word, pos in tokens if pos in ['Noun', 'Adjective', 'Verb']]
     return tokens
 
@@ -89,7 +86,6 @@ def process_movie_data(movie_data):
         'negative_ratio': negative_ratio
     }
 
-# 파일의 절대 경로를 얻습니다
 current_dir = os.path.dirname(os.path.abspath(__file__))
 data_file_path = os.path.join(current_dir, 'data.json')
 
@@ -104,13 +100,13 @@ def load_and_process_data():
         
         movie = Movie(
             title=movie_data['영화명'],
-            poster_url=movie_data['포스터'],
-            running_time=movie_data['상영시간'],
-            release_date=movie_data['개봉년도'],
-            synopsis=movie_data['줄거리'],
-            genre=movie_data['장르'],
-            rating=movie_data['평점'],
-            audience=movie_data['관객수']
+            poster_url=movie_data.get('포스터', '없음'),
+            running_time=movie_data.get('상영시간', '없음'),
+            release_date=movie_data.get('개봉년도', '없음'),
+            synopsis=movie_data.get('줄거리', '없음'),
+            genre=movie_data.get('장르', '없음'),
+            rating=movie_data.get('평점', '없음'),
+            audience=movie_data.get('관객수', 0)
         )
         db.add(movie)
         db.flush()
@@ -160,6 +156,9 @@ def get_movie(movie_id: int):
             "release_date": movie.release_date,
             "synopsis": movie.synopsis,
             "recommended_movies": movie.recommended_movies,
+            "genre": movie.genre,
+            "rating": movie.rating,
+            "audience": movie.audience
         },
         "reviews": [
             {
